@@ -9,42 +9,42 @@ import java.security.MessageDigest;
 public class Git {
 
     public static boolean init() {
-        int exist = 0;
-        File git1 = new File("git");
-        if (git1.exists() == false) {
-            git1.mkdir();
+        int fileExistsCount = 0;
+        File gitDirectory = new File("git");
+        if (gitDirectory.exists() == false) {
+            gitDirectory.mkdir();
 
         } else {
-            exist+=1;
+            fileExistsCount+=1;
         }
-        File git2 = new File("git/objects");
-        if (git2.exists() == false) {
-            git2.mkdir();
+        File objDirectory = new File("git/objects");
+        if (objDirectory.exists() == false) {
+            objDirectory.mkdir();
         } else {
-            exist+=1;
+            fileExistsCount+=1;
         }
-        File git3 = new File("git/INDEX");
-        if (git3.exists() == false) {
+        File indexFile = new File("git/INDEX");
+        if (indexFile.exists() == false) {
             try {
-                git3.createNewFile();   
+                indexFile.createNewFile();   
             } catch (IOException e) {
                 System.out.println("cant");
             }
         } else {
-            exist+=1;
+            fileExistsCount+=1;
         }
-        File git4 = new File("git/HEAD");
-        if (git4.exists() == false) {
+        File headFile = new File("git/HEAD");
+        if (headFile.exists() == false) {
             try {
-                git4.createNewFile();   
+                headFile.createNewFile();   
             } catch (IOException e) {
                 System.out.println("cant");
             }
         } else {
-            exist+=1;
+            fileExistsCount+=1;
         }
 
-        if (exist == 4) {
+        if (fileExistsCount == 4) {
             System.out.println("Git Repository Already Exists");
             return true;
         } else {
@@ -54,20 +54,20 @@ public class Git {
     }
 
     public static String hashFile(String filePath) throws IOException {
-        String str = "";
+        String fileContents = "";
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            str = reader.readAllAsString();
+            fileContents = reader.readAllAsString();
         } catch (IOException e) {
             System.out.println("cant ");
         }
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            byte[] hash = digest.digest(str.getBytes());
-            StringBuilder hexString = new StringBuilder();
-                for (byte b : hash) {
-                    hexString.append(String.format("%02x", b));
+            MessageDigest sha1digest = MessageDigest.getInstance("SHA-1");
+            byte[] hashBytes = sha1digest.digest(fileContents.getBytes());
+            StringBuilder hashHexString = new StringBuilder();
+                for (byte b : hashBytes) {
+                    hashHexString.append(String.format("%02x", b));
                 }
-            return hexString.toString();
+            return hashHexString.toString();
         } catch (Exception e) {
             System.out.println("cant");
             return null;
@@ -76,13 +76,13 @@ public class Git {
 
     public static void blob(String filePath) throws IOException {
         String fileName = hashFile(filePath);
-        String newpath = "git/objects/" + fileName;
-        File hashed = new File(newpath);
-        hashed.createNewFile();
+        String newPath = "git/objects/" + fileName;
+        File objectFile = new File(newPath);
+        objectFile.createNewFile();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            try (FileWriter writer = new FileWriter(newpath)) {
-                String result = reader.readAllAsString();
-                writer.write(result);
+            try (FileWriter writer = new FileWriter(newPath)) {
+                String fileContents = reader.readAllAsString();
+                writer.write(fileContents);
                 reader.close();
                 writer.close();
             } catch (Exception e) {
@@ -91,20 +91,18 @@ public class Git {
         } catch (Exception e) {
                 System.out.println("cant ");
         }
-
-
     }
 
     public static void index(String filePath) throws IOException {
-        String fileName = hashFile(filePath);
-        String current = "";
+        String fileHash = hashFile(filePath);
+        String existingIndexContents = "";
         try (BufferedReader reader = new BufferedReader(new FileReader("git/INDEX"))) {
-                current = reader.readAllAsString();
+                existingIndexContents = reader.readAllAsString();
         }
         try (FileWriter writer = new FileWriter("git/INDEX")) {
-            String line = fileName + " " + filePath + "\n";
-            writer.write(current);
-            writer.append(line);
+            String indexEntry = fileHash + " " + filePath + "\n";
+            writer.write(existingIndexContents);
+            writer.append(indexEntry);
         }
     }
 
