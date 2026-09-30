@@ -108,8 +108,10 @@ public class Git {
         }
     }
 
-    public static void add(String filePath) throws IOException {
+    public static void add(String filePath) throws IOException { 
         blob(filePath);
         index(filePath);
     }
+
+    
 }

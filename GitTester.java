@@ -6,13 +6,15 @@ public class GitTester {
         Git.init();
         File newText = new File("nexText.txt");
         newText.createNewFile();
-        checkRepo();
-        cleanup();
+        Git.add("nexText.txt");
+        Git.add("hello.txt");
+        // checkRepo();
+        // cleanup();
 
-        while (checkRepo() == false) {
-            cleanup();
-            Git.init();
-        }
+        // while (checkRepo() == false) {
+        //     cleanup();
+        //     Git.init();
+        // }
         
     }
 
