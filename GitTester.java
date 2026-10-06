@@ -7,7 +7,6 @@ public class GitTester {
         File newText = new File("nexText.txt");
         newText.createNewFile();
         Git.add("nexText.txt");
-        Git.add("hello.txt");
         Git.add("test/testing.txt");
         // checkRepo();
         // cleanup();

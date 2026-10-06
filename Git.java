@@ -76,7 +76,7 @@ public class Git {
             }
             return hashHexString.toString();
         } catch (Exception e) {
-            System.out.println("cant");
+            System.out.println("cant hash");
             return null;
         }
     }
@@ -93,10 +93,10 @@ public class Git {
                 reader.close();
                 writer.close();
             } catch (Exception e) {
-                System.out.println("cant");
+                System.out.println("blob: cant read and write files: " + e);
             }
         } catch (Exception e) {
-            System.out.println("cant ");
+            System.out.println("cant: " + e);
         }
     }
 
@@ -152,7 +152,7 @@ public class Git {
         index(filePath);
     }
 
-    public static void createTree (String directoryPath) throws IOException { 
+    public static String createTree (String directoryPath) throws IOException { 
         StringBuilder treeContents = new StringBuilder();
         File directory = new File(directoryPath);
         // Path currPath = Path.of("git", "objects");
@@ -164,7 +164,9 @@ public class Git {
                 if (file.isFile()) {
                     treeContents.append("blob " + hashFile(file.toString()) + " " + file.toString());
                 } else {
-                    treeContents.append("tree " + hashFile(file.toString()) + " " + file.toString());
+                    // need to add recursive for each subdirectory 
+                    String subDirectoryHash = createTree(file.toString());
+                    treeContents.append("tree " + subDirectoryHash + " " + file.toString());
                 }
                 treeContents.append("\n");
             }
@@ -174,6 +176,7 @@ public class Git {
         FileWriter fw = new FileWriter("git/objects/" + treeHash);
         fw.write(treeContents.toString());
         fw.close();
+        return treeHash;
     }
 
 
