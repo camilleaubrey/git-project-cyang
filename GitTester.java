@@ -8,6 +8,7 @@ public class GitTester {
         newText.createNewFile();
         Git.add("nexText.txt");
         Git.add("hello.txt");
+        Git.add("test/testing.txt");
         // checkRepo();
         // cleanup();
 
@@ -15,6 +16,7 @@ public class GitTester {
         //     cleanup();
         //     Git.init();
         // }
+        Git.createTree("test");
         
     }
 

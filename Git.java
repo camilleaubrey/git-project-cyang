@@ -29,7 +29,7 @@ public class Git {
             try {
                 indexFile.createNewFile();
             } catch (IOException e) {
-                System.out.println("cant");
+                System.out.println("cant make index");
             }
         } else {
             fileExistsCount += 1;
@@ -39,7 +39,7 @@ public class Git {
             try {
                 headFile.createNewFile();
             } catch (IOException e) {
-                System.out.println("cant");
+                System.out.println("cant make HEAD");
             }
         } else {
             fileExistsCount += 1;
@@ -56,11 +56,17 @@ public class Git {
 
     public static String hashFile(String filePath) throws IOException {
         String fileContents = "";
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            fileContents = reader.readAllAsString();
-        } catch (IOException e) {
-            System.out.println("cant ");
+        File fp = new File(filePath);
+        if (fp.isFile()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+                fileContents = reader.readAllAsString();
+            } catch (IOException e) {
+                System.out.println("cant read all as string");
+            }
+        } else {
+            fileContents = filePath;
         }
+        
         try {
             MessageDigest sha1digest = MessageDigest.getInstance("SHA-1");
             byte[] hashBytes = sha1digest.digest(fileContents.getBytes());
@@ -144,6 +150,30 @@ public class Git {
     public static void add(String filePath) throws IOException {
         blob(filePath);
         index(filePath);
+    }
+
+    public static void createTree (String directoryPath) throws IOException { 
+        StringBuilder treeContents = new StringBuilder();
+        File directory = new File(directoryPath);
+        // Path currPath = Path.of("git", "objects");
+
+        File[] files = directory.listFiles();
+
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    treeContents.append("blob " + hashFile(file.toString()) + " " + file.toString());
+                } else {
+                    treeContents.append("tree " + hashFile(file.toString()) + " " + file.toString());
+                }
+                treeContents.append("\n");
+            }
+        } 
+
+        String treeHash = hashFile(treeContents.toString());
+        FileWriter fw = new FileWriter("git/objects/" + treeHash);
+        fw.write(treeContents.toString());
+        fw.close();
     }
 
 
