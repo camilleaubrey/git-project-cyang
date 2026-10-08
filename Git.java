@@ -1,8 +1,5 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.util.*;
 import java.nio.file.*;
 import java.security.MessageDigest;
 
@@ -66,7 +63,7 @@ public class Git {
         } else {
             fileContents = filePath;
         }
-        
+
         try {
             MessageDigest sha1digest = MessageDigest.getInstance("SHA-1");
             byte[] hashBytes = sha1digest.digest(fileContents.getBytes());
@@ -107,14 +104,14 @@ public class Git {
         Path sourcePath = Paths.get(filePath);
         String relativePath = sourcePath.toString();
         String indexEntry = fileHash + " " + relativePath;
-        
+
         boolean updated = false;
 
         try (BufferedReader reader = new BufferedReader(new FileReader("git/INDEX"))) {
             existingIndexContents = reader.readAllAsString();
         }
 
-        try (FileWriter writer = new FileWriter("git/index")) {
+        try (FileWriter writer = new FileWriter("git/INDEX")) {
             String[] indexContentArray = existingIndexContents.split("\n");
             StringBuilder newIndexContent = new StringBuilder();
             for (int i = 0; i < indexContentArray.length; i++) {
@@ -126,7 +123,7 @@ public class Git {
                 if (currFilePath.equals(filePath)) {
                     newIndexContent.append(indexEntry + "\n");
                     updated = true;
-                } 
+                }
 
                 // add existing line (different filePath)
                 else {
@@ -140,7 +137,8 @@ public class Git {
             }
 
             // cut out "\n" in beginning and end
-            String newIndexContentString = newIndexContent.toString().substring(1, newIndexContent.length()- 1);
+            String newIndexContentString =
+                    newIndexContent.toString().trim();
 
             // write to index file with the new index contents
             writer.write(newIndexContentString);
@@ -152,31 +150,73 @@ public class Git {
         index(filePath);
     }
 
-    public static String createTree (String directoryPath) throws IOException { 
+    public static String createTree(ArrayList<String> workingList, String directoryPath) throws IOException {
         StringBuilder treeContents = new StringBuilder();
-        File directory = new File(directoryPath);
-        // Path currPath = Path.of("git", "objects");
 
-        File[] files = directory.listFiles();
+        for (String line : workingList) {
+            // decomposing each entry into its type, hash, and file path
+            String[] parts = line.split(" ", 3);
 
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile()) {
-                    treeContents.append("blob " + hashFile(file.toString()) + " " + file.toString());
-                } else {
-                    // need to add recursive for each subdirectory 
-                    String subDirectoryHash = createTree(file.toString());
-                    treeContents.append("tree " + subDirectoryHash + " " + file.toString());
-                }
-                treeContents.append("\n");
+            String type = parts[0];
+            String hash = parts[1];
+            String filePath = parts[2];
+
+            File file = new File(filePath);
+            String parentDirectory = file.getParent();
+
+            // checking if the file belongs directly inside the directory we're creating the tree for
+            if (directoryPath.equals(parentDirectory)) {
+                String fileName = file.getName();
+                treeContents.append(type + " " + hash + " " + fileName + "\n");
             }
-        } 
+        }
 
         String treeHash = hashFile(treeContents.toString());
         FileWriter fw = new FileWriter("git/objects/" + treeHash);
         fw.write(treeContents.toString());
         fw.close();
         return treeHash;
+    }
+
+    public static ArrayList<String> workingList() throws IOException {
+        ArrayList<String> workingList = new ArrayList<>();
+        ArrayList<String> workingListFiles = new ArrayList<>();
+        HashMap<String, String> fileMap = new HashMap<>();
+
+        // reading the existing index file (going line by line), prefix "blob"
+        try (BufferedReader br = new BufferedReader(new FileReader("git/INDEX"))) {
+            String line = br.readLine();
+
+            while (line != null) {
+                // add same filePath, but with diff hash
+                if (!line.isBlank()) {
+                    workingList.add("blob " + line);
+                }
+
+                line = br.readLine();
+            }
+        }
+
+        // get file paths and store original entries
+        for (String line : workingList) {
+            String[] parts = line.split(" ", 3);
+            String filePath = parts[2];
+
+            workingListFiles.add(filePath);
+            fileMap.put(filePath, line);
+        }
+
+        // sort alphabetically
+        Collections.sort(workingListFiles);
+
+        // rebuild working list in sorted order
+        ArrayList<String> sortedWorkingList = new ArrayList<>();
+
+        for (String filePath : workingListFiles) {
+            sortedWorkingList.add(fileMap.get(filePath));
+        }
+
+        return sortedWorkingList;
     }
 
 
