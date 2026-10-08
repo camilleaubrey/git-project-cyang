@@ -137,8 +137,7 @@ public class Git {
             }
 
             // cut out "\n" in beginning and end
-            String newIndexContentString =
-                    newIndexContent.toString().trim();
+            String newIndexContentString = newIndexContent.toString().trim();
 
             // write to index file with the new index contents
             writer.write(newIndexContentString);
@@ -150,7 +149,8 @@ public class Git {
         index(filePath);
     }
 
-    public static String createTree(ArrayList<String> workingList, String directoryPath) throws IOException {
+    public static String createTree(ArrayList<String> workingList, String directoryPath)
+            throws IOException {
         StringBuilder treeContents = new StringBuilder();
 
         for (String line : workingList) {
@@ -164,7 +164,8 @@ public class Git {
             File file = new File(filePath);
             String parentDirectory = file.getParent();
 
-            // checking if the file belongs directly inside the directory we're creating the tree for
+            // checking if the file belongs directly inside the directory we're creating the tree
+            // for
             if (directoryPath.equals(parentDirectory)) {
                 String fileName = file.getName();
                 treeContents.append(type + " " + hash + " " + fileName + "\n");
@@ -217,6 +218,29 @@ public class Git {
         }
 
         return sortedWorkingList;
+    }
+
+    public static void collapseWorkingList(ArrayList<String> workingList, String directoryPath,
+            String treeHash) {
+
+        // go through workingList backwards (to not skip entry lines)
+        for (int i = workingList.size() - 1; i >= 0; i--) {
+            String line = workingList.get(i);
+
+            // get filePath from the entry line
+            String[] parts = line.split(" ", 3);
+            String filePath = parts[2];
+
+            File file = new File(filePath);
+            String parentDirectory = file.getParent();
+
+            // remove entries that belong directly to this directory
+            if (directoryPath.equals(parentDirectory)) {
+                workingList.remove(i);
+            }
+        }
+        
+        workingList.add("tree " + treeHash + " " + directoryPath);
     }
 
 
