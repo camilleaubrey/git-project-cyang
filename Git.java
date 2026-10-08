@@ -239,9 +239,48 @@ public class Git {
                 workingList.remove(i);
             }
         }
-        
+
         workingList.add("tree " + treeHash + " " + directoryPath);
     }
 
+    public static String buildRootTree() throws IOException {
+        ArrayList<String> wL = workingList();
+        
+        if (wL.isEmpty()) {
+            return null;
+        }
 
+        String rootDirectory = Paths.get(wL.get(0).split(" ", 3)[2]).getName(0).toString();
+
+        while (wL.size() > 1 || !wL.get(0).split(" ", 3)[0].equals("tree")
+                || !wL.get(0).split(" ", 3)[2].equals(rootDirectory)) {
+            String deepestDirectory = "";
+            int maxDepth = -1;
+
+            // find deepest directory in wL
+            for (String line : wL) {
+                String[] parts = line.split(" ", 3);
+                String filePath = parts[2];
+
+                File file = new File(filePath);
+                String parentDirectory = file.getParent();
+
+                // get amount of directories in the path
+                if (parentDirectory != null) {
+                    int depth = Paths.get(parentDirectory).getNameCount();
+
+                    if (depth > maxDepth) {
+                        maxDepth = depth;
+                        deepestDirectory = parentDirectory;
+                    }
+                }
+            }
+
+            String treeHash = createTree(wL, deepestDirectory);
+            collapseWorkingList(wL, deepestDirectory, treeHash);
+        }
+
+        return wL.get(0).split(" ", 3)[1];
+
+    }
 }
