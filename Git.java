@@ -56,7 +56,8 @@ public class Git {
         File fp = new File(filePath);
         if (fp.isFile()) {
             try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-                fileContents = reader.readAllAsString();
+                //fileContents = reader.readAllAsString();
+                fileContents = Files.readString(Path.of(filePath));
             } catch (IOException e) {
                 System.out.println("cant read all as string");
             }
@@ -85,7 +86,8 @@ public class Git {
         objectFile.createNewFile();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             try (FileWriter writer = new FileWriter(newPath)) {
-                String fileContents = reader.readAllAsString();
+                //String fileContents = reader.readAllAsString();
+                String fileContents = Files.readString(Path.of(filePath));
                 writer.write(fileContents);
                 reader.close();
                 writer.close();
@@ -108,7 +110,8 @@ public class Git {
         boolean updated = false;
 
         try (BufferedReader reader = new BufferedReader(new FileReader("git/INDEX"))) {
-            existingIndexContents = reader.readAllAsString();
+            //existingIndexContents = reader.readAllAsString();
+            existingIndexContents = Files.readString(Path.of("git/INDEX"));
         }
 
         try (FileWriter writer = new FileWriter("git/INDEX")) {

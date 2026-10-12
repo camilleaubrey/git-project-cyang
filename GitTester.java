@@ -18,7 +18,7 @@ public class GitTester {
         // }
 
         ArrayList<String> list = Git.workingList();
-        System.out.println(Git.createTree(list, "test/wowza"));
+        System.out.println(Git.createTree(list, "test"));
 
         // Git.createTree("test");
         System.out.println(Git.workingList());
