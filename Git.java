@@ -286,4 +286,19 @@ public class Git {
         return wL.get(0).split(" ", 3)[1];
 
     }
+
+    public static void commit() {
+        //recursivly go through index + build it
+        //list of commits singly linked
+
+        try {
+            String tree = buildRootTree();
+            String previousCommit = Files.readString(Paths.get("git/HEAD"));
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+        
+        
+
+    }
 }
