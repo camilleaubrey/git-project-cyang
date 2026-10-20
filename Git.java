@@ -2,6 +2,8 @@ import java.io.*;
 import java.util.*;
 import java.nio.file.*;
 import java.security.MessageDigest;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 
 
 public class Git {
@@ -287,18 +289,40 @@ public class Git {
 
     }
 
-    public static void commit() {
+    public static void commit(String message, String authorName) {
         //recursivly go through index + build it
         //list of commits singly linked
 
+        boolean isFirst = false;
+
         try {
             String tree = buildRootTree();
-            String previousCommit = Files.readString(Paths.get("git/HEAD"));
+            String parentCommit = Files.readString(Paths.get("git/HEAD"));
+            if (parentCommit.isEmpty()) {
+                isFirst = true;
+            }
+
+            String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyy-MM-dd HH:mm:ss"));
+            StringBuilder commit = new StringBuilder();
+            commit.append("tree: " + tree + "\nparent: " + parentCommit + "\nauthor: " + authorName + "\ndate: " + date + "\nmessage: " + message);
+
+            String commitHash = hashString(commit.toString());
+            Files.writeString(Paths.get("git/objects/" + commitHash), commit.toString());
+
+
+            //Add to Head
+            if (isFirst == true) {
+                try (FileWriter writer = new FileWriter("git/HEAD")) {
+                    writer.write(commit.toString());
+                    writer.close();
+                }
+            }
+
         } catch (IOException e) {
             System.out.println(e);
         }
-        
-        
-
     }
+
+    
+
 }
