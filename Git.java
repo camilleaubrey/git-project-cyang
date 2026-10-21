@@ -23,7 +23,7 @@ public class Git {
         } else {
             fileExistsCount += 1;
         }
-        File indexFile = new File("git/INDEX");
+        File indexFile = new File("git/index");
         if (indexFile.exists() == false) {
             try {
                 indexFile.createNewFile();
@@ -81,6 +81,21 @@ public class Git {
         }
     }
 
+    public static String hashString(String contents) {
+        try {
+            MessageDigest sha1digest = MessageDigest.getInstance("SHA-1");
+            byte[] hashBytes = sha1digest.digest(contents.getBytes());
+            StringBuilder hashHexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                hashHexString.append(String.format("%02x", b));
+            }
+            return hashHexString.toString();
+        } catch (Exception e) {
+            System.out.println("cant hash");
+            return null;
+        }
+    }
+
     public static void blob(String filePath) throws IOException {
         String fileName = hashFile(filePath);
         String newPath = "git/objects/" + fileName;
@@ -111,12 +126,12 @@ public class Git {
 
         boolean updated = false;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader("git/INDEX"))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("git/index"))) {
             //existingIndexContents = reader.readAllAsString();
-            existingIndexContents = Files.readString(Path.of("git/INDEX"));
+            existingIndexContents = Files.readString(Path.of("git/index"));
         }
 
-        try (FileWriter writer = new FileWriter("git/INDEX")) {
+        try (FileWriter writer = new FileWriter("git/index")) {
             String[] indexContentArray = existingIndexContents.split("\n");
             StringBuilder newIndexContent = new StringBuilder();
             for (int i = 0; i < indexContentArray.length; i++) {
@@ -190,7 +205,7 @@ public class Git {
         HashMap<String, String> fileMap = new HashMap<>();
 
         // reading the existing index file (going line by line), prefix "blob"
-        try (BufferedReader br = new BufferedReader(new FileReader("git/INDEX"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("git/index"))) {
             String line = br.readLine();
 
             while (line != null) {
@@ -289,38 +304,41 @@ public class Git {
 
     }
 
-    public static void commit(String message, String authorName) {
+    public static String commit(String message, String authorName) {
         //recursivly go through index + build it
         //list of commits singly linked
 
         boolean isFirst = false;
+        String commitHash = "";
 
         try {
             String tree = buildRootTree();
-            String parentCommit = Files.readString(Paths.get("git/HEAD"));
+            String parentCommit = Files.readString(Paths.get("git/HEAD")).trim();
             if (parentCommit.isEmpty()) {
                 isFirst = true;
             }
 
-            String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyy-MM-dd HH:mm:ss"));
+            String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             StringBuilder commit = new StringBuilder();
             commit.append("tree: " + tree + "\nparent: " + parentCommit + "\nauthor: " + authorName + "\ndate: " + date + "\nmessage: " + message);
 
-            String commitHash = hashString(commit.toString());
+            commitHash = hashString(commit.toString());
             Files.writeString(Paths.get("git/objects/" + commitHash), commit.toString());
 
 
-            //Add to Head
-            if (isFirst == true) {
-                try (FileWriter writer = new FileWriter("git/HEAD")) {
-                    writer.write(commit.toString());
+            //update HEAD
+            try (FileWriter writer = new FileWriter("git/HEAD")) {
+                    writer.write(commitHash);
                     writer.close();
-                }
+            } catch (Exception e) {
+                System.out.println(e);
             }
 
         } catch (IOException e) {
             System.out.println(e);
         }
+
+        return commitHash;
     }
 
     public static String rebuildHash(String commitHash) {
@@ -338,12 +356,7 @@ public class Git {
         String rootHash = headCommit.get(0).substring(6); //get hash from tree in commit message
         rebuildHashRecursive("", rootHash, index);
         
-        
-        // try (FileWriter writer = new FileWriter("git/index")) {
-        //     writer.write(index.toString());
-        // } catch (IOException e) {
-        //     System.out.println(e);
-        // }
+        //addToIndexAfterRebuilding(index.toString());
         return index.toString();
 
     }
@@ -372,6 +385,14 @@ public class Git {
                 
             }
             
+        }
+    }
+
+    public static void addToIndexAfterRebuilding(String index) {
+        try (FileWriter writer = new FileWriter("git/index")) {
+            writer.write(index.toString());
+        } catch (IOException e) {
+            System.out.println(e);
         }
     }
 

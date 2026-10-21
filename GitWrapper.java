@@ -1,9 +1,11 @@
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+
 
 public class GitWrapper {
 
@@ -29,7 +31,6 @@ public class GitWrapper {
     public void add(String filePath) {
         // to-do: implement functionality here
         try {
-            Git.hashFile(filePath);
             Git.add(filePath);
         } catch (Exception e) {
             System.out.println(e);
@@ -57,19 +58,7 @@ public class GitWrapper {
      * @return The SHA1 hash of the new commit.
      */
     public String commit(String author, String message) {
-        // Path currentDir = Path.of("").toAbsolutePath();
-        // String currentDirStr = currentDir.toString();
-        // ArrayList<String> workingList = Git.workingList();
-        // try {
-        //     Git.createTree(workingList, currentDirStr);
-        // } catch (Exception e) {
-            
-        // }
-        
-        Git.commit(message, author);
-
-
-        return "";
+        return Git.commit(message, author);
     }
 
     /**
@@ -89,32 +78,85 @@ public class GitWrapper {
         } catch (IOException e) {
             System.out.println(e);
         }
+
         String[] currentIndex = Git.rebuildHash(headHash).split("\n");
         String targetString = Git.rebuildHash(commitHash);
         String[] targetIndex = targetString.split("\n");
 
         for (int i = 0; i < currentIndex.length; i++) {
-            boolean found = false;
-            for (int j = 0; j < targetIndex.length; j++) {
-                if (currentIndex[i].split(" ", 2)[1].equals(targetIndex[j].split(" ", 2)[1])) {
-                    found = true;
+            try {
+                Files.deleteIfExists(Paths.get(currentIndex[i].split(" ", 2)[1]));
+                File parentDirectory = new File(currentIndex[i].split(" ", 2)[1]).getParentFile();
+                while (parentDirectory != null && parentDirectory.delete()) {
+                    parentDirectory = parentDirectory.getParentFile();
                 }
+
+            } catch (Exception e) {
+                System.out.println(e);
             }
-            
-            if (found == false) {
-                try {
-                    Files.delete(Paths.get(currentIndex[i].split(" ", 2)[1]));
-                } catch (IOException e) {
-                    System.out.println(e);
-                }
-            }
-            
         }
-        
-        try (FileWriter writer = new FileWriter("git/index")) {
-            writer.write(targetString);
+
+        for (int i = 0; i < targetIndex.length; i++) {
+            String hash = targetIndex[i].split(" ", 2)[0];
+            String path = targetIndex[i].split(" ", 2)[1];
+
+            File parentDirectory = new File(path).getParentFile();
+            if (parentDirectory != null) {
+                parentDirectory.mkdirs();
+            }
+
+            String contents = "";
+            try {
+                contents = Files.readString(Paths.get("git/objects/" + hash));
+                FileWriter writer = new FileWriter(path);
+                writer.write(contents);
+                writer.close();
+            } catch (IOException e) {
+                System.out.println(e);
+            }
+        }
+
+        //rewrite index file
+        Git.addToIndexAfterRebuilding(targetString);
+
+        //update head
+        try (FileWriter writer = new FileWriter("git/HEAD")) {
+            writer.write(commitHash);
+            writer.close();
         } catch (IOException e) {
             System.out.println(e);
         }
     }
+
+        
+
+
+        // String[] currentIndex = Git.rebuildHash(headHash).split("\n");
+        // String targetString = Git.rebuildHash(commitHash);
+        // String[] targetIndex = targetString.split("\n");
+
+        // for (int i = 0; i < currentIndex.length; i++) {
+        //     boolean found = false;
+        //     for (int j = 0; j < targetIndex.length; j++) {
+        //         if (currentIndex[i].split(" ", 2)[1].equals(targetIndex[j].split(" ", 2)[1])) {
+        //             found = true;
+        //         }
+        //     }
+            
+        //     if (found == false) {
+        //         try {
+        //             Files.delete(Paths.get(currentIndex[i].split(" ", 2)[1]));
+        //             File parentDirectory = new File(currentIndex[i].split(" ", 2)[1]).getParentFile();
+                    
+        //             while (parentDirectory.delete()) {
+        //                 parentDirectory = parentDirectory.getParentFile(); //handles nested folders; delete only works if folder empty
+        //             }
+        //         } catch (IOException e) {
+        //             System.out.println(e);
+        //         }
+        //     }
+        // }
+        
+        
+    
 }
