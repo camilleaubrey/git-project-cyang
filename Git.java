@@ -323,46 +323,55 @@ public class Git {
         }
     }
 
-    public static void rebuildHash(String commitHash) {
-        //no change to get from head 
-        List<String> commit = null;
+    public static void rebuildHash() {
+        List<String> headCommit = null;
+        StringBuilder index = new StringBuilder();
+
 
         try {
-            commit = Files.readAllLines(Path.of("git/objects/" + commitHash));
+            String headHash = Files.readString(Path.of("git/HEAD")).trim();
+            headCommit = Files.readAllLines(Path.of("git/objects/" + headHash));
         } catch (IOException e) {
             System.out.println(e);
         }
 
-        String rootHash = commit.get(0).substring(6); //get this as the tree from the commit message
+        String rootHash = headCommit.get(0).substring(6); //get hash from tree in commit message
+        rebuildHashRecursive("", rootHash, index);
+        
+        
+        try (FileWriter writer = new FileWriter("git/index")) {
+            writer.write(index.toString());
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+
+    }
+
+    public static void rebuildHashRecursive(String directory, String hash, StringBuilder index) {
         List<String> rootMessage = null;
         try {
-            rootMessage = Files.readAllLines(Path.of("git/objects" + rootHash));
+            rootMessage = Files.readAllLines(Path.of("git/objects" + "/" + hash));
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }
-
-    public static void rebuildHashRecursive(String directory, String hash) {
         for (int i = 0; i < rootMessage.size(); i++) {
             String[] lineContents = rootMessage.get(i).split(" "); 
-            for (int j = 0; j <= 3; j++) {
-                if (lineContents[0].equals("tree")) {
-                    String currentDirectory = Path.of("").toAbsolutePath().toString();
-                    rebuildHashRecursive(currentDirectory, lineContents[2]);
-                } else if (lineContents[0].equals("blob")) {
-                    Files.write("git/index", lineContents[2] + " " + lineContents);
-                }
-                
-
+            String newDirectory = "";
+            if (directory.equals("")) {
+                newDirectory = lineContents[2];
+            } else {
+                newDirectory = directory + "/" + lineContents[2];
             }
-
+            
+            if (lineContents[0].equals("tree")) {
+                rebuildHashRecursive(newDirectory, lineContents[1], index);
+            } else if (lineContents[0].equals("blob")) {
+                index.append(lineContents[1] + " " + newDirectory + "\n");
+                
+            }
             
         }
-
-
     }
-
-    
 
 }
