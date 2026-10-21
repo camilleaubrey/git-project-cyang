@@ -323,14 +323,14 @@ public class Git {
         }
     }
 
-    public static void rebuildHash() {
+    public static String rebuildHash(String commitHash) {
         List<String> headCommit = null;
         StringBuilder index = new StringBuilder();
 
 
         try {
-            String headHash = Files.readString(Path.of("git/HEAD")).trim();
-            headCommit = Files.readAllLines(Path.of("git/objects/" + headHash));
+            //String headHash = Files.readString(Path.of("git/HEAD")).trim();
+            headCommit = Files.readAllLines(Path.of("git/objects/" + commitHash));
         } catch (IOException e) {
             System.out.println(e);
         }
@@ -339,11 +339,12 @@ public class Git {
         rebuildHashRecursive("", rootHash, index);
         
         
-        try (FileWriter writer = new FileWriter("git/index")) {
-            writer.write(index.toString());
-        } catch (IOException e) {
-            System.out.println(e);
-        }
+        // try (FileWriter writer = new FileWriter("git/index")) {
+        //     writer.write(index.toString());
+        // } catch (IOException e) {
+        //     System.out.println(e);
+        // }
+        return index.toString();
 
     }
 

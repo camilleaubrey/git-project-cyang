@@ -1,4 +1,8 @@
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class GitWrapper {
@@ -79,5 +83,38 @@ public class GitWrapper {
      */
     public void checkout(String commitHash) {
         // to-do: implement functionality here
+        String headHash = "";
+        try {
+            headHash = Files.readString(Path.of("git/HEAD")).trim();
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+        String[] currentIndex = Git.rebuildHash(headHash).split("\n");
+        String targetString = Git.rebuildHash(commitHash);
+        String[] targetIndex = targetString.split("\n");
+
+        for (int i = 0; i < currentIndex.length; i++) {
+            boolean found = false;
+            for (int j = 0; j < targetIndex.length; j++) {
+                if (currentIndex[i].split(" ", 2)[1].equals(targetIndex[j].split(" ", 2)[1])) {
+                    found = true;
+                }
+            }
+            
+            if (found == false) {
+                try {
+                    Files.delete(Paths.get(currentIndex[i].split(" ", 2)[1]));
+                } catch (IOException e) {
+                    System.out.println(e);
+                }
+            }
+            
+        }
+        
+        try (FileWriter writer = new FileWriter("git/index")) {
+            writer.write(targetString);
+        } catch (IOException e) {
+            System.out.println(e);
+        }
     }
 }
