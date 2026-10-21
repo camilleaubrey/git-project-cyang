@@ -323,6 +323,46 @@ public class Git {
         }
     }
 
+    public static void rebuildHash(String commitHash) {
+        //no change to get from head 
+        List<String> commit = null;
+
+        try {
+            commit = Files.readAllLines(Path.of("git/objects/" + commitHash));
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+
+        String rootHash = commit.get(0).substring(6); //get this as the tree from the commit message
+        List<String> rootMessage = null;
+        try {
+            rootMessage = Files.readAllLines(Path.of("git/objects" + rootHash));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    public static void rebuildHashRecursive(String directory, String hash) {
+        for (int i = 0; i < rootMessage.size(); i++) {
+            String[] lineContents = rootMessage.get(i).split(" "); 
+            for (int j = 0; j <= 3; j++) {
+                if (lineContents[0].equals("tree")) {
+                    String currentDirectory = Path.of("").toAbsolutePath().toString();
+                    rebuildHashRecursive(currentDirectory, lineContents[2]);
+                } else if (lineContents[0].equals("blob")) {
+                    Files.write("git/index", lineContents[2] + " " + lineContents);
+                }
+                
+
+            }
+
+            
+        }
+
+
+    }
+
     
 
 }

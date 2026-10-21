@@ -24,8 +24,13 @@ public class GitWrapper {
      */
     public void add(String filePath) {
         // to-do: implement functionality here
-        Git.hashFile(filePath);
-        Git.add(filePath);
+        try {
+            Git.hashFile(filePath);
+            Git.add(filePath);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        
     }
 
     /**
@@ -48,15 +53,14 @@ public class GitWrapper {
      * @return The SHA1 hash of the new commit.
      */
     public String commit(String author, String message) {
-        // to-do: implement functionality here
-        Path currentDir = Path.of("").toAbsolutePath();
-        String currentDirStr = currentDir.toString();
-        ArrayList<String> workingList = Git.workingList();
-        try {
-            Git.createTree(workingList, currentDirStr);
-        } catch (Exception e) {
+        // Path currentDir = Path.of("").toAbsolutePath();
+        // String currentDirStr = currentDir.toString();
+        // ArrayList<String> workingList = Git.workingList();
+        // try {
+        //     Git.createTree(workingList, currentDirStr);
+        // } catch (Exception e) {
             
-        }
+        // }
         
         Git.commit(message, author);
 
